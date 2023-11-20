@@ -5,6 +5,7 @@
     align-items: center;
     text-align: center;
 }
+
 #gamesText {
     width: 16%;
     display: flex;
@@ -12,6 +13,7 @@
     align-items: center;
     text-align: center;
 }
+
 #connectionsText {
     width: 16%;
     display: flex;
@@ -19,6 +21,7 @@
     align-items: center;
     text-align: center;
 }
+
 #recordText {
     width: 16%;
     display: flex;
@@ -26,6 +29,7 @@
     align-items: center;
     text-align: center;
 }
+
 #rankText {
     width: 16%;
     display: flex;
@@ -33,6 +37,7 @@
     align-items: center;
     text-align: center;
 }
+
 #outcomeText {
     width: 100%;
     display: flex;
@@ -40,6 +45,7 @@
     align-items: center;
     text-align: center;
 }
+
 #blank {
     width: 10%;
     display: flex;
@@ -47,14 +53,17 @@
     align-items: center;
     text-align: center;
 }
+
 #blankDrops {
     width: 30%;
     display: flex;
 }
+
 #blankMiddle {
     width: 2%;
     display: flex;
 }
+
 #header {
     font-family: Georgia, Times, "Times New Roman", serif;
     font-size: 50px;
@@ -65,10 +74,12 @@
     text-align: center;
     color: rgb(255, 255, 255);
 }
+
 #dropContainer {
     justify-content: center;
     align-items: center;
 }
+
 #dashContainer {
     font-family: Georgia, Times, "Times New Roman", serif;
     font-size: 20px;
@@ -78,6 +89,7 @@
     line-height: 26.4px;
     background: #863737;
 }
+
 #outcomeContainer {
     font-family: Georgia, Times, "Times New Roman", serif;
     font-size: 20px;
@@ -87,6 +99,7 @@
     line-height: 26.4px;
     background: #6a2121;
 }
+
 #teamDropdown {
     background-color: #939393;
     color: white;
@@ -97,6 +110,7 @@
     cursor: pointer;
     text-align: center;
 }
+
 #seasonDropdown {
     background-color: #939393;
     color: white;
@@ -107,11 +121,13 @@
     cursor: pointer;
     text-align: center;
 }
+
 #graphDiv {
     width: 70%;
     display: flex;
     justify-content: center;
 }
+
 #tooltipDiv {
     width: 30%;
     display: flex;
@@ -121,36 +137,41 @@
     color: #ffffff;
     font-size: 20px;
 }
+
 .help {
     width: 40px;
     margin: 0 auto;
 }
+
 .help .question {
     height: 40px;
     width: 40px;
-    background: #ccc;
+    background: #ffffff;
     font-size: 32px;
     line-height: 40px;
     text-align: center;
     border-radius: 50%;
     cursor: pointer;
 }
+
 .help .popup {
     width: 560px;
     height: 0px;
     text-align: left;
     overflow: hidden;
     position: relative;
-    background: #eee;
+    background: #ffffff;
     opacity: 0;
     transition: 1s;
     left: -260px;
     top: 10px;
 }
+
 .help:hover .popup {
     opacity: 1;
-    height: 50px;
+    height: 520px;
 }
+
 .help .popup p {
     font-size: 16px;
     padding: 10px;

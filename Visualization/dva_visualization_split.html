@@ -2,18 +2,28 @@
 <meta charset="utf-8">
 
 <script src="https://d3js.org/d3.v4.js"></script>
-<link rel="stylesheet" type="text/css" href="dva_viz.css">
+<link rel="stylesheet" type="text/css" href="dva_visualization.css">
 
 <html>
 
 <body style="background-color:rgb(27, 33, 88)">
 
-    <br><h1 id="header"></h1><br>
+    <br>
+    <h1 id="header"></h1>
+    <br>
 
     <div class="help">
         <div class="question">?</div>
         <div class="popup">
-            <p>In IT you develop lots of</p>
+            <p>Data for player pairings is based on the finalized, end-of-season rosters.</p>
+            <p>Game data is available from 2002 - 2022. In order to build substantial enough networks for display, years 2002 and 2003 are not available as selections but are accounted for in the historical metrics.</p>       
+            <p>Visualizations for 2019 and 2020 may appear sparse due to COVID.</p>
+            <p>Some networks may appear to have more players than normal. This could be attributed to an injury-ridden team playing a lot of their reserves, lots of trades taking place right around the deadline, etc.</p>
+            <p>Some teams went through a name change (ex. New Orleans Hornets became the New Orleans Pelicans in 2013). In these cases, networks are not displayed for player pairings in the years before the final name change.</p>
+            <p>Previous Seasons Together = Pairwise Sum of Seasons Played Together prior to the selected season</p>
+            <p>Previous Games Together = Pairwise Sum of Games Played Together prior to the selected season</p>
+            <p>Previous Connections = Number of Times players had played with another prior to the selected season (aka number of arcs in the diagram)</p>
+            <p>Combined Minutes = Sum of Minutes Played between two players when they played on the same team in previous seasons</p>
         </div>
     </div>
 
@@ -26,7 +36,6 @@
     </div>
 
     <div id="dashContainer" class="container" style="display: flex; height: 95px; width: 100%;">
-        <!--border-bottom: solid 2px white; border-top: solid 2px white;-->
         <div id="blank"></div>
         <div id="recordText" style="color: white"></div>
         <div id="rankText" style="color: white"></div>
@@ -69,7 +78,7 @@
 
     // Can Substitute link with "dva_visualization.json"
 
-    d3.json("https://raw.githubusercontent.com/alexmorton1212/NBA_Connections/main/dva_visualization.json", function (data) {
+    d3.json("https://raw.githubusercontent.com/alexmorton1212/NBA_Connections/main/Visualization/dva_visualization.json", function (data) {
 
         let unique_teams = [];
         let count_teams = 0;
@@ -101,8 +110,7 @@
         unique_seasons.sort().reverse();
         let selected_season = unique_seasons[0];
 
-
-        // Create Initial Visualization
+        // Create Initial Visualization (ATL, 2022)
 
         createGraph(selected_team, selected_season)
 
