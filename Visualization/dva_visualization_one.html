@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!--Style Sheet: Leaving it here instead of separate CSS so we only have to submit one file-->
+
+<style>
+    #seasonsText {
+        width: 16%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #gamesText {
+        width: 16%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #connectionsText {
+        width: 16%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #recordText {
+        width: 16%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #rankText {
+        width: 16%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #outcomeText {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #blank {
+        width: 10%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #blankDrops {
+        width: 30%;
+        display: flex;
+    }
+
+    #blankMiddle {
+        width: 2%;
+        display: flex;
+    }
+
+    #header {
+        font-family: Georgia, Times, "Times New Roman", serif;
+        font-size: 50px;
+        font-style: normal;
+        font-variant: normal;
+        font-weight: 700;
+        line-height: 5px;
+        text-align: center;
+        color: rgb(255, 255, 255);
+    }
+
+    #dropContainer {
+        justify-content: center;
+        align-items: center;
+    }
+
+    #dashContainer {
+        font-family: Georgia, Times, "Times New Roman", serif;
+        font-size: 20px;
+        font-style: normal;
+        font-variant: normal;
+        font-weight: 700;
+        line-height: 26.4px;
+        background: #863737;
+    }
+
+    #outcomeContainer {
+        font-family: Georgia, Times, "Times New Roman", serif;
+        font-size: 20px;
+        font-style: normal;
+        font-variant: normal;
+        font-weight: 700;
+        line-height: 26.4px;
+        background: #6a2121;
+    }
+
+    #teamDropdown {
+        background-color: #939393;
+        color: white;
+        padding: 6px;
+        font-size: 22px;
+        width: 250px;
+        border: none;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    #seasonDropdown {
+        background-color: #939393;
+        color: white;
+        padding: 6px;
+        font-size: 22px;
+        width: 250px;
+        border: none;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    #graphDiv {
+        width: 70%;
+        display: flex;
+        justify-content: center;
+    }
+
+    #tooltipDiv {
+        width: 30%;
+        display: flex;
+        justify-content: center;
+        font-family: Georgia, Times, "Times New Roman", serif;
+        text-align: center;
+        color: #ffffff;
+        font-size: 20px;
+    }
+
+    .help {
+        width: 40px;
+        margin: 0 auto;
+    }
+
+    .help .question {
+        height: 40px;
+        width: 40px;
+        background: #ffffff;
+        font-size: 32px;
+        line-height: 40px;
+        text-align: center;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .help .popup {
+        width: 560px;
+        height: 0px;
+        text-align: left;
+        overflow: hidden;
+        position: relative;
+        background: #ffffff;
+        opacity: 0;
+        transition: 1s;
+        left: -260px;
+        top: 10px;
+    }
+
+    .help:hover .popup {
+        opacity: 1;
+        height: 520px;
+    }
+
+    .help .popup p {
+        font-size: 16px;
+        padding: 10px;
+        margin: 0;
+    }
+
+</style>
+
+<html>
+
+<body style="background-color:rgb(27, 33, 88)">
+
+    <br>
+    <h1 id="header"></h1>
+    <br>
+
+    <div class="help">
+        <div class="question">?</div>
+        <div class="popup">
+            <p>Data for player pairings is based on the finalized, end-of-season rosters.</p>
+            <p>Game data is available from 2002 - 2022. In order to build substantial enough networks for display, years 2002 and 2003 are not available as selections but are accounted for in the historical metrics.</p>       
+            <p>Visualizations for 2019 and 2020 may appear sparse due to COVID.</p>
+            <p>Some networks may appear to have more players than normal. This could be attributed to an injury-ridden team playing a lot of their reserves, lots of trades taking place right around the deadline, etc.</p>
+            <p>Some teams went through a name change (ex. New Orleans Hornets became the New Orleans Pelicans in 2013). In these cases, networks are not displayed for player pairings in the years before the final name change.</p>
+            <p>Previous Seasons Together = Pairwise Sum of Seasons Played Together prior to the selected season</p>
+            <p>Previous Games Together = Pairwise Sum of Games Played Together prior to the selected season</p>
+            <p>Previous Connections = Number of Times players had played with another prior to the selected season (aka number of arcs in the diagram)</p>
+            <p>Combined Minutes = Sum of Minutes Played between two players when they played on the same team in previous seasons</p>
+        </div>
+    </div>
+
+    <div id="dropContainer" class="container" style="display: flex; height: 100px; width: 100%">
+        <div id="blankDrops"></div>
+        <div id="teamsDiv"><select id="teamDropdown"></select></div>
+        <div id="blankMiddle"></div>
+        <div id="seasonsDiv"><select id="seasonDropdown"></select></div>
+        <div id="blankDrops"></div>
+    </div>
+
+    <div id="dashContainer" class="container" style="display: flex; height: 95px; width: 100%;">
+        <div id="blank"></div>
+        <div id="recordText" style="color: white"></div>
+        <div id="rankText" style="color: white"></div>
+        <div id="seasonsText" style="color: white"></div>
+        <div id="gamesText" style="color: white"></div>
+        <div id="connectionsText" style="color: white"></div>
+        <div id="blank"></div>
+    </div>
+
+    <div id="outcomeContainer" class="container" style="display: flex; height: 50px; width: 100%;">
+        <div id="outcomeText" style="color: white"></div>
+    </div>
+
+    <div id="blankContainer" class="container" style="display: flex; height: 10px; width: 100%;"></div>
+
+    <div id="my_dataviz" class="container" style="display: flex; flex-wrap: nowrap; height: 800px; width: 100%">
+        <div id="graphDiv" style="border-right: solid 3px #ffffff;"></div>
+        <div id="tooltipDiv"></div>
+    </div>
+
+</body>
+
+</html>
+
+
+<script>
+
+    var margin = { top: 100, right: 150, bottom: 100, left: 150 }
+    var outerWidth = 1600, outerHeight = 800;
+    var width = outerWidth - margin.right - margin.left, height = outerHeight - margin.top - margin.bottom;
+
+    var svg = d3
+        .select("#graphDiv")
+        .append("svg")
+        .attr("id", "graph")
+        .attr("viewBox", "0 0 " + outerWidth + " " + outerHeight)
+        .append("g")
+        .attr("class", "plot-space")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Can Substitute link with "dva_visualization.json"
+
+    d3.json("https://raw.githubusercontent.com/alexmorton1212/NBA_Connections/main/dva_visualization.json", function (data) {
+
+        let unique_teams = [];
+        let count_teams = 0;
+        let start_teams = false;
+        let unique_seasons = [];
+        let count_seasons = 0;
+        let start_seasons = false;
+
+        for (let i = 0; i < data.nodes.length; i++) {
+            for (let j = 0; j < unique_teams.length; j++) {
+                if (data.nodes[i]["team_abbreviation"] == unique_teams[j]) { start_teams = true; }
+            }
+            count_teams++; if (count_teams == 1 && start_teams == false) { unique_teams.push(data.nodes[i]["team_abbreviation"]); }
+            start_teams = false;
+            count_teams = 0;
+        }
+
+        for (let i = 0; i < data.nodes.length; i++) {
+            for (let j = 0; j < unique_seasons.length; j++) {
+                if (data.nodes[i]["season"] == unique_seasons[j]) { start_seasons = true; }
+            }
+            count_seasons++; if (count_seasons == 1 && start_seasons == false) { unique_seasons.push(data.nodes[i]["season"]); }
+            start_seasons = false;
+            count_seasons = 0;
+        }
+
+        unique_teams.sort();
+        let selected_team = unique_teams[0];
+        unique_seasons.sort().reverse();
+        let selected_season = unique_seasons[0];
+
+        // Create Initial Visualization (ATL, 2022)
+
+        createGraph(selected_team, selected_season)
+
+        // Create Dropdown Menu of Teams
+
+        d3.select("#teamDropdown")
+            .selectAll('options')
+            .data(unique_teams)
+            .enter()
+            .append('option')
+            .text(function (d) { return d; })
+            .attr("value", function (d) { return d; })
+
+        d3.select('#teamDropdown')
+            .on('change', function () {
+                d3.selectAll("circle").remove();
+                d3.selectAll("path").remove();
+                d3.selectAll("text").remove();
+                d3.selectAll("tooltip").remove();
+                selected_team = d3.select(this).property('value');
+                createGraph(selected_team, selected_season)
+            });
+
+        // Create Dropdown Menu of Seasons
+
+        d3.select("#seasonDropdown")
+            .selectAll('options')
+            .data(unique_seasons)
+            .enter()
+            .append('option')
+            .text(function (d) { return d; })
+            .attr("value", function (d) { return d; })
+
+        d3.select('#seasonDropdown')
+            .on('change', function () {
+                d3.selectAll("circle").remove();
+                d3.selectAll("path").remove();
+                d3.selectAll("text").remove();
+                d3.selectAll("tooltip").remove();
+                selected_season = d3.select(this).property('value');
+                createGraph(selected_team, selected_season)
+            });
+
+
+        // Creates Visualization and Tooltips
+
+        function createGraph(selected_team, selected_season) {
+
+            // Filters Data Based on Season and Team from Respective Dropdowns
+
+            const filtered_nodes = data.nodes.filter(d => d['season'] == selected_season && d['team_abbreviation'] == selected_team)
+            const filtered_full = data.full.filter(d => d['total_seasons'] > 0 && d['SEASON'] == selected_season && d['TEAM_ABBREVIATION'] == selected_team)
+
+            let previous_seasons = 0;
+            let previous_games = 0;
+
+            for (i = 0; i < filtered_full.length; i++) {
+                previous_seasons += filtered_full[i].total_seasons;
+                previous_games += filtered_full[i].total_games;
+            }
+
+            // Gets Dashboard Metrics Based on Filtered Data
+
+            const filtered_record = data.outcomes.filter(d => d['team_abbreviation'] == selected_team && d['season_short'] == selected_season)[0];
+            const selected_team_full = filtered_record['team_fullname'];
+            const selected_season_full = filtered_record['Season'];
+            const record = filtered_record['RS_Win_Loss'];
+            const rank = filtered_record['RS_Standing_Clean'];
+            const outcome = filtered_record['PO_Outcome_Clean'];
+
+            // Dynamic Text Fields Based On Above Calculations
+
+            d3.select('#header')
+                .html(selected_season_full + " " + selected_team_full);
+            d3.select('#seasonsText')
+                .html("Previous Seasons Together<br>" + previous_seasons);
+            d3.select('#gamesText')
+                .html("Previous Games Together<br>" + previous_games);
+            d3.select('#recordText')
+                .html("Regular Season Record<br> " + record);
+            d3.select('#rankText')
+                .html("Regular Season Rank<br> " + rank);
+            d3.select('#outcomeText')
+                .html("Playoff Outcome: " + outcome);
+
+            // Evenly Distributes Nodes on Axis
+
+            var x = d3.scalePoint()
+                .range([0, width])
+                .domain(filtered_nodes.map(function (d) { return d.name }))
+
+            // Creates Nodes (Players)
+
+            var nodes = svg
+                .selectAll("mynodes")
+                .data(filtered_nodes)
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) { return (x(d.name)) })
+                .attr("cy", height - 30)
+                .attr("r", 25)
+                .style("fill", "white")
+
+            // Creates Labels for Nodes (Players Initials)
+
+            var labels = svg
+                .selectAll("nodelabels")
+                .data(filtered_nodes)
+                .enter()
+                .append("text")
+                .style("font-size", "18px")
+                .style("font-weight", "bold")
+                .style("font-family", "Georgia")
+                .style("fill", "white")
+                .attr("x", function (d) { return (x(d.name)) })
+                .attr("y", height + 20)
+                .text(function (d) { return d.name.split(" ").map((n) => n[0]).join("") })
+                .style("text-anchor", "middle")
+
+            var idToNode = {};
+            filtered_nodes.forEach(function (n) {
+                idToNode[n.id] = n;
+            });
+
+            // Creates Links (Arcs) Between Nodes (Players Connections)
+
+            var links = svg
+                .selectAll('mylinks')
+                .data(filtered_full)
+                .enter()
+                .append('path')
+                .attr('d', function (d) {
+                    start = x(idToNode[d.player_1_id].name)
+                    end = x(idToNode[d.player_2_id].name)
+                    return ['M', start, height - 30, 'A', (start - end) / 2, ',', (start - end) / 2, 0, 0, ',', start < end ? 1 : 0, end, ',', height - 30].join(' ');
+                })
+                .style("fill", "none")
+                .attr("stroke", "white")
+                .style('stroke-width', '2')
+
+            // Calculates Number of Links (Connections) for Selected (Season, Team)
+
+            d3.select('#connectionsText')
+                .html("Previous Connections<br>" + links._groups[0].length);
+
+            // Declare Initial Tooltip
+            // Only works this way when using 'mouseover' and 'mouseout' functionality
+            // Otherwise there are problems with tooltips not disappearing after 'mouseout'
+
+            var tooltip;
+
+            // Calculates Pairwise Metrics Between Selected Node (Player) and Connected Nodes (Teammates)
+
+            function find_connections(node) {
+
+                let original_player = node.name;
+                let links_names = "<br><br><p style='font-size: 34px; font-weight: bold'>" + original_player + "</p>";
+                let first = 0;
+
+                for (i = 0; i < links._groups[0].length; i++) {
+                    let player_link = links._groups[0][i].__data__;
+                    if (player_link.player_1_name == original_player) {
+                        if (first == 0) {
+                            first = 1;
+                            links_names += "Previous Seasons | Previous Games | Combined Minutes<br>";
+                        }
+                        links_names += "<br><strong>" + player_link.player_2_name + ": </strong>";
+                        links_names += player_link.total_seasons + " | ";
+                        links_names += player_link.total_games + " | ";
+                        links_names += player_link.total_minutes + "<br>";
+                    }
+                    if (player_link.player_2_name == original_player) {
+                        if (first == 0) {
+                            first = 1;
+                            links_names += "Previous Seasons | Previous Games | Combined Minutes<br>";
+                        }
+                        links_names += "<br><strong>" + player_link.player_1_name + ": </strong>";
+                        links_names += player_link.total_seasons + " | ";
+                        links_names += player_link.total_games + " | ";
+                        links_names += player_link.total_minutes + "<br>";
+                    }
+                }
+                return links_names;
+            }
+
+            // Visually Isolates The Connections To The Selected Node
+            // Displays Connection Metrics With Tooltip
+
+            nodes
+                .on('mouseover', function (d) {
+
+                    nodes.style('fill', "white")
+                    d3.select(this).style('fill', 'white')
+                    tooltip = d3.select("#tooltipDiv").append("div")
+                        .attr("class", "tooltip")
+                        .style("opacity", 100)
+                        .html(find_connections(d))
+                        .style("right", "1000px")
+                    links
+                        .style('stroke', function (link_d) { return link_d.player_1_id === d.id || link_d.player_2_id === d.id ? 'white' : 'none'; })
+                        .style('stroke-width', function (link_d) { return link_d.player_1_id === d.id || link_d.player_2_id === d.id ? 3 : 3; })
+                })
+                .on('mouseout', function (d) {
+
+                    nodes.style('fill', "white")
+                    links.style('stroke', 'white').style('stroke-width', '3')
+                    d3.select("body").selectAll(".tooltip").remove()
+                })
+        }
+    })
+
+
+</script>
