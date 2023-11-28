@@ -1,0 +1,343 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+library(sqldf)
+library(lubridate)
+library(jsonlite)
+library(hablar)
+library(dplyr)
+
+```
+
+########################
+
+CREATING PAIRWISE DATA
+
+########################
+
+```{r}
+
+game_detail_df = read.csv("games_details.csv", head = TRUE, sep = ",")
+game_df = read.csv("games.csv", head = TRUE, sep = ",")
+seasons_df = read.csv("all_seasons.csv", head = TRUE, sep = ",")
+
+```
+
+```{r}
+
+sql_df_merge =
+
+sqldf("
+
+  SELECT *
+  FROM game_detail_df
+  INNER JOIN game_df ON game_detail_df.GAME_ID = game_df.GAME_ID
+  
+")
+
+sql_df_merge = sql_df_merge[,c(1,2,3,5,6,10,35)]
+sql_df_merge$SECONDS<- as.numeric(ms(sql_df_merge$MIN))
+sql_df_merge[is.na(sql_df_merge)] = 0
+
+```
+
+```{r}
+
+sql_df_aggregate = 
+
+sqldf("
+
+  SELECT DISTINCT
+    df1.PLAYER_ID as player_1_id, 
+    df1.PLAYER_NAME as player_1_name,
+    df1.SECONDS as player_1_seconds,
+    df2.PLAYER_ID as player_2_id, 
+    df2.PLAYER_NAME as player_2_name, 
+    df2.SECONDS as player_2_seconds,
+    df1.GAME_ID, 
+    df1.TEAM_ID, 
+    df1.TEAM_ABBREVIATION,
+    df1.SEASON
+  FROM sql_df_merge df1
+    INNER JOIN sql_df_merge df2
+    ON df1.GAME_ID = df2.GAME_ID
+      AND df1.TEAM_ID = df2.TEAM_ID
+      AND df1.PLAYER_ID < df2.PLAYER_ID
+  
+")
+
+```
+
+```{r}
+
+sql_df_pairs =
+
+sqldf("
+
+  SELECT
+    player_1_id, 
+    player_1_name, 
+    player_2_id, 
+    player_2_name,
+    SEASON,
+    TEAM_ID,
+    TEAM_ABBREVIATION,
+    COUNT(*) AS games_together,
+    ROUND(SUM(player_1_seconds / 60) + SUM(player_2_seconds / 60)) as minutes_combined
+  FROM sql_df_aggregate
+  GROUP BY player_1_id, player_2_id, SEASON
+  ORDER BY games_together DESC
+  
+")
+
+```
+
+```{r}
+
+# IDENTIFIED NO DUPLICATES ACROSS PLAYER 1, PLAYER 2, SEASON
+
+ind = duplicated(sql_df_pairs[,c(1,3,5)])
+sql_df_pairs[ind,]
+
+```
+
+```{r}
+
+# THIS PORTION TAKES HOURS TO RUN
+
+# Calculates historical metrics up to each season and team for each player pairing
+# How we get "number of seasons together", "games together", and "minutes together"
+
+####################################################################################
+
+# pb = txtProgressBar(min = 0, max = nrow(sql_df_pairs), initial = 0) 
+# 
+# final_df = sql_df_pairs
+# final_df$total_seasons = 0
+# final_df$total_games = 0
+# final_df$total_minutes = 0
+# 
+# for(i in 1:nrow(final_df)) {
+#   
+#     setTxtProgressBar(pb,i)
+#   
+#     row_player_1 = final_df[i,]$player_1_id
+#     row_player_2 = final_df[i,]$player_2_id
+#     row_season = final_df[i,]$SEASON
+#     
+#     row_query = paste("SELECT COUNT(*) as total_seasons, SUM(games_together), SUM(minutes_combined) FROM final_df WHERE player_1_id = '", row_player_1, 
+#                       "' AND player_2_id = '", row_player_2,
+#                       "' AND SEASON < '", row_season, 
+#                       "'")
+#     
+#     query = sqldf(row_query)
+#       
+#     final_df[i,]$total_seasons = query[[1]]
+#     final_df[i,]$total_games = query[[2]]
+#     final_df[i,]$total_minutes = query[[3]]
+#     
+# }
+# 
+# close(pb)
+
+```
+
+```{r}
+
+final_df[is.na(final_df)] = 0
+
+x <- toJSON(final_df)
+jsonlite::write_json(fromJSON(x), "nba_connections.json") 
+write.csv(final_df, "nba_connections.csv", row.names=FALSE)
+
+```
+
+#########################################
+
+CREATING ANALYSIS/VISUALIZATION DATASETS
+
+#########################################
+
+```{r}
+
+connections_df = read.csv("nba_connections.csv", head = TRUE, sep = ",")
+
+team_df = read.csv("all_seasons.csv", head = TRUE, sep = ",")
+team_df = team_df[,c(2,3,22)]
+team_df$season = substr(team_df$season, start = 1, stop = 4)
+team_df$team_abbreviation[team_df$team_abbreviation == 'CHH'] <- 'CHA'
+team_df$team_abbreviation[team_df$team_abbreviation == 'VAN'] <- 'MEM'
+
+rosters_df = read.csv("all_seasons.csv", head = TRUE, sep = ",")
+rosters_df$season = substr(rosters_df$season, start = 1, stop = 4)
+rosters_df$team_abbreviation[rosters_df$team_abbreviation == 'CHH'] <- 'CHA'
+rosters_df$team_abbreviation[rosters_df$team_abbreviation == 'VAN'] <- 'MEM'
+
+outcomes_df = read.csv("season_details.csv", head = TRUE, sep = ",")
+
+```
+
+```{r}
+
+team_abbrev_df_1 = unique(team_df[,c(2,3)])
+team_abbrev_df_2 = unique(connections_df[,c(7,6)])
+colnames(team_abbrev_df_2) = c('team_abbreviation','team_id') 
+
+team_abbrev_df_1$team_abbreviation[team_abbrev_df_1$team_abbreviation == 'CHH'] <- 'CHA'
+team_abbrev_df_1$team_abbreviation[team_abbrev_df_1$team_abbreviation == 'VAN'] <- 'MEM'
+team_abbrev_df_1$team_abbreviation[team_abbrev_df_1$team_abbreviation == 'NJN'] <- 'BKN'
+team_abbrev_df_1$team_abbreviation[team_abbrev_df_1$team_abbreviation == 'NOH'] <- 'NOP'
+team_abbrev_df_1$team_abbreviation[team_abbrev_df_1$team_abbreviation == 'NOK'] <- 'NOP'
+team_abbrev_df_1$team_abbreviation[team_abbrev_df_1$team_abbreviation == 'SEA'] <- 'OKC'
+
+team_abbrev_df_2$team_abbreviation[team_abbrev_df_2$team_abbreviation == 'CHH'] <- 'CHA'
+team_abbrev_df_2$team_abbreviation[team_abbrev_df_2$team_abbreviation == 'VAN'] <- 'MEM'
+team_abbrev_df_2$team_abbreviation[team_abbrev_df_2$team_abbreviation == 'NJN'] <- 'BKN'
+team_abbrev_df_2$team_abbreviation[team_abbrev_df_2$team_abbreviation == 'NOH'] <- 'NOP'
+team_abbrev_df_2$team_abbreviation[team_abbrev_df_2$team_abbreviation == 'NOK'] <- 'NOP'
+team_abbrev_df_2$team_abbreviation[team_abbrev_df_2$team_abbreviation == 'SEA'] <- 'OKC'
+
+team_abbrev_df = merge(x = team_abbrev_df_1, y = team_abbrev_df_2, by = "team_abbreviation", all = TRUE)
+team_abbrev_df = team_abbrev_df[team_abbrev_df$season >= 2002,]
+
+
+```
+
+```{r}
+
+# UNIQUE PLAYERS IN EITHER PLAYER COLUMN
+
+first_df = connections_df[,c(1,2,5,7)]
+colnames(first_df) = c('id','name','season','team_abbreviation') 
+
+second_df = connections_df[,c(3,4,5,7)]
+colnames(second_df) = c('id','name','season','team_abbreviation') 
+
+unique_df = unique(rbind(first_df, second_df))
+
+```
+
+```{r}
+
+nodes_df = unique_df[0, ]
+full_df = connections_df[0, ]
+
+# ACTIVE PLAYERS AT END OF SEASON
+
+for(i in 1:nrow(team_abbrev_df)) {
+  
+    row <- team_abbrev_df[i,]
+
+    roster_filter_df = filter(rosters_df, season == row[[2]], team_abbreviation == row[[1]])
+    connections_filter_df = filter(connections_df, SEASON == row[[2]], TEAM_ABBREVIATION == row[[1]])
+    
+    first_df = connections_filter_df[,c(1,2,5,7)]
+    colnames(first_df) = c('id','name','season','team_abbreviation') 
+    second_df = connections_filter_df[,c(3,4,5,7)]
+    colnames(second_df) = c('id','name','season','team_abbreviation') 
+
+    third_df = unique(rbind(first_df, second_df))
+
+    temp_nodes_df = third_df[third_df$name %in% roster_filter_df$player_name, ]
+    temp_full_df = connections_filter_df[connections_filter_df$player_1_name %in% roster_filter_df$player_name 
+                                         & connections_filter_df$player_2_name %in% roster_filter_df$player_name, ]
+    
+    nodes_df = rbind(nodes_df, temp_nodes_df)
+    full_df = rbind(full_df, temp_full_df)
+    
+}
+
+no_dupes_full_df = full_df[!duplicated(full_df), ]
+
+```
+
+```{r}
+
+outcomes_short_df = outcomes_df[,c(1,2,3,10,11)]
+
+outcomes_short_df$season_short = substr(outcomes_short_df$Season, start = 1, stop = 4)
+
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Hawks'] <- 'ATL'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Nets'] <- 'BKN'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Celtics'] <- 'BOS'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Hornets'] <- 'CHA'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Bulls'] <- 'CHI'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Cavaliers'] <- 'CLE'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Mavericks'] <- 'DAL'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Nuggets'] <- 'DEN'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Pistons'] <- 'DET'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Warriors'] <- 'GSW'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Rockets'] <- 'HOU'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Pacers'] <- 'IND'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Clippers'] <- 'LAC'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Lakers'] <- 'LAL'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Grizzlies'] <- 'MEM'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Heat'] <- 'MIA'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Bucks'] <- 'MIL'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Timberwolves'] <- 'MIN'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Pelicans'] <- 'NOP'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Knicks'] <- 'NYK'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Thunder'] <- 'OKC'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Magic'] <- 'ORL'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == '76ers'] <- 'PHI'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Suns'] <- 'PHX'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Trail Blazers'] <- 'POR'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Kings'] <- 'SAC'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Spurs'] <- 'SAS'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Raptors'] <- 'TOR'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Jazz'] <- 'UTA'
+outcomes_short_df$team_abbreviation[outcomes_short_df$Team == 'Wizards'] <- 'WAS'
+
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Hawks'] <- 'Atlanta Hawks'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Nets'] <- 'Brooklyn Nets'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Celtics'] <- 'Boston Celtics'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Hornets'] <- 'Charlotte Hornets'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Bulls'] <- 'Chicago Bulls'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Cavaliers'] <- 'Cleveland Cavaliers'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Mavericks'] <- 'Dallas Mavericks'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Nuggets'] <- 'Denver Nuggets'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Pistons'] <- 'Detroit Pistons'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Warriors'] <- 'Golden State Warriors'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Rockets'] <- 'Houston Rockets'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Pacers'] <- 'Indiana Pacers'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Clippers'] <- 'Los Angeles Clippers'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Lakers'] <- 'Los Angeles Lakers'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Grizzlies'] <- 'Memphis Grizzlies'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Heat'] <- 'Miami Heat'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Bucks'] <- 'Milwaukee Bucks'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Timberwolves'] <- 'Minnesota Timberwolves'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Pelicans'] <- 'New Orleans Pelicans'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Knicks'] <- 'New York Knicks'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Thunder'] <- 'Oklahoma City Thunder'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Magic'] <- 'Orlando Magic'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == '76ers'] <- 'Philadelphia 76ers'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Suns'] <- 'Phoenix Suns'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Trail Blazers'] <- 'Portland Trail Blazers'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Kings'] <- 'Sacramento Kings'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Spurs'] <- 'San Antonio Spurs'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Raptors'] <- 'Toronto Raptors'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Jazz'] <- 'Utah Jazz'
+outcomes_short_df$team_fullname[outcomes_short_df$Team == 'Wizards'] <- 'Washington'
+
+```
+
+```{r}
+
+# FOR VISUALIZATION PORTION
+
+final_test_json_df = list(nodes = nodes_df, full = no_dupes_full_df, outcomes = outcomes_short_df)
+final_test_json = toJSON(final_test_json_df)
+jsonlite::write_json(fromJSON(final_test_json), "dva_visualization.json") 
+
+# FOR ANALYSIS PORTION
+
+write.csv(no_dupes_full_df, "connections_final_roster.csv", row.names=FALSE)
+write.csv(outcomes_short_df, "season_outcomes.csv", row.names=FALSE)
+write.csv(connections_df, "connections_full_roster.csv", row.names=FALSE)
+
+```
+
