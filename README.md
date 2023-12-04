@@ -1,19 +1,25 @@
-This package contains a DOC folder with our team's, Team 172's, project final report and project poster highlighting our extensive reseach, analysis and development on innovating team chemistry metrics and its corresponding visualization. 
+# NBA Team Chemistry (Data and Visual Analytics Team Project - Team 172)
+- Members: Alex Morton, Jere Xu, Armando Di Cicco, Nicolas Archambault, Luis Dominguez, Vinay Easwaran
 
-Contents of the CODE folder:
+
+## Overview
+
+- This package contains a DOC folder with our team's, Team 172's, project final report and project poster highlighting our extensive reseach, analysis and development on innovating team chemistry metrics and its corresponding visualization. 
+
+## Contents of the CODE folder:
 
 Data_Cleaning_&_EDA.ipynb: python notebook for our data scraping and cleanup of the dataset
 Classification_Models.ipynb: python notebook for preprocessing and ML experimentation and results. 
 NBA_Connections-main.zip: Package with code that executes our final D3 v4 visualization. 
 
-tr
-INSTALLATION
+
+## INSTALLATION
 
 - Navigate to the CODE/ folder
 - Unzip the NBA_Connections-main.zip 
 
 
-EXECUTION
+## EXECUTION
 
 - Navigate to the CODE/NBA_Connections-main/Vizualization/ folder
 - VSCode --> Install Live Server (extension) --> Open 'dva_visualization.html' --> Go Live (bottom right corner) using Chrome
