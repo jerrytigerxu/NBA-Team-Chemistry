@@ -4,7 +4,9 @@
 
 ## Overview
 
-- This package contains a DOC folder with our team's, Team 172's, project final report and project poster highlighting our extensive reseach, analysis and development on innovating team chemistry metrics and its corresponding visualization. 
+- This package contains a DOC folder with our team's, Team 172's, project final report and project poster highlighting our extensive reseach, analysis and development on innovating team chemistry metrics and its corresponding visualization.
+- To get a bird's eye view and general understanding of this project, check out our [poster](DOC/team172poster.pdf)
+- To get a more in-depth understanding of our project and the process by which it was built, check out our [final report](DOC/team172report.pdf)
 
 ## Contents of the CODE folder:
 
