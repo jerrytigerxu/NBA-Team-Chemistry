@@ -1,5 +1,6 @@
 # NBA Team Chemistry (Data and Visual Analytics Team Project - Team 172)
 - Members: Alex Morton, Jere Xu, Armando Di Cicco, Nicolas Archambault, Luis Dominguez, Vinay Easwaran
+- Georgia Institute of Technology OMSCS Program
 
 
 ## Overview
